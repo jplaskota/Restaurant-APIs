@@ -1,0 +1,24 @@
+{
+  "name": "jurand-plaskota-pub",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/axlcra/Jurand-Plaskota-Pub.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/axlcra/Jurand-Plaskota-Pub/issues"
+  },
+  "homepage": "https://github.com/axlcra/Jurand-Plaskota-Pub#readme",
+  "dependencies": {
+    "@types/node": "^17.0.21",
+    "express": "^4.17.3"
+  }
+}
