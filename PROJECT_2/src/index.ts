@@ -1,7 +1,9 @@
 import express from "express";
 import { Request, Response } from "express";
 import { parse } from "path";
+import { json } from "stream/consumers";
 import { Note } from "./note";
+import fs from "fs";
 
 const app = express();
 
@@ -16,24 +18,20 @@ app.post("/", function (req: Request, res: Response) {
   res.status(200).send("POST Hello World");
 });
 
-const notes: Note[] = [
-  {
-    title: "a",
-    content: "one",
-    createDate: "1-01-2022",
-    tags: ["a", "b", "c"],
-    id: 1,
-  },
-  {
-    title: "b",
-    content: "two",
-    createDate: "2-02-2022",
-    tags: ["a", "c"],
-    id: 2,
-  },
-];
+let notes: Note[] = [];
+
+function Write(): void {
+  var fs = require("fs");
+  fs.writeFileSync("src/data/notes.json", JSON.stringify(notes));
+}
+
+function Read(): void {
+  var fs = require("fs");
+  notes = JSON.parse(fs.readFileSync("src/data/notes.json"));
+}
 
 app.get("/note/:id", function (req: Request, res: Response) {
+  Read();
   const note = notes.find((a) => a.id === parseInt(req.params.id));
   if (note) {
     res.status(200).send(note);
@@ -43,6 +41,7 @@ app.get("/note/:id", function (req: Request, res: Response) {
 });
 
 app.post("/note", (req: Request, res: Response) => {
+  Read();
   if (req.body.title && req.body.content) {
     const note: Note = {
       title: req.body.title,
@@ -53,6 +52,8 @@ app.post("/note", (req: Request, res: Response) => {
     };
 
     notes.push(note);
+    Write();
+
     res.sendStatus(201);
   } else {
     res.status(400).send("Not Created");
@@ -60,11 +61,11 @@ app.post("/note", (req: Request, res: Response) => {
 });
 
 app.put("/note/:id", (req: Request, res: Response) => {
+  Read();
   const note = notes.find((a) => a.id === parseInt(req.params.id));
   if (!note) {
     res.status(404).send("Not Found");
-  }
-  else {
+  } else {
     const newnote: Note = {
       title: req.body.title,
       content: req.body.content,
@@ -74,18 +75,20 @@ app.put("/note/:id", (req: Request, res: Response) => {
     };
     const index = notes.indexOf(note);
     notes[index] = newnote;
+    Write();
     res.status(204).send("Updated");
   }
 });
 
 app.delete("/note/:id", (req: Request, res: Response) => {
+  Read();
   const note = notes.find((a) => a.id === parseInt(req.params.id));
   if (!note) {
     res.status(400).send("Not Found");
-  }
-  else {
+  } else {
     const index = notes.indexOf(note);
     notes.splice(index, 1);
+    Write();
     res.status(204).send("Deleted");
   }
 });
