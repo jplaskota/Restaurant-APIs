@@ -51,20 +51,23 @@ async function Write(): Promise<void> {
   await fs.writeFileSync("src/data/tags.json", JSON.stringify(tagsList));
 }
 
-async function Read(): Promise<void> {
+function Read(): void {
   var fs = require("fs");
 
-  var data = await fs.readFileSync("src/data/notes.json", "utf8");
+  var data = fs.readFileSync("src/data/notes.json", "utf8");
   if (data) {
-    notes = JSON.parse(data);
+    let newNotes: Note[] = JSON.parse(data);
+    notes = newNotes;
   }
 
-  data = await fs.readFileSync("src/data/tags.json", "utf8");
+  data = fs.readFileSync("src/data/tags.json", "utf8");
   if (data) {
-    tagsList = JSON.parse(data);
+    let newTagsList: Tag[] = JSON.parse(data);
+    tagsList = newTagsList;
   }
 
   console.log(notes);
+  console.log(tagsList);
 }
 
 app.get("/notes", async function (req: Request, res: Response) {
@@ -82,14 +85,14 @@ app.get("/note/:id", async function (req: Request, res: Response) {
   }
 });
 
-app.post("/note", async function (req: Request, res: Response) {
-  await Read();
+app.post("/note", function (req: Request, res: Response) {
+  Read();
   let tag: Tag = {
     id: tagsList.length + 1,
     name: "basic",
   };
 
-  const isTag = tagsList.find((a) => a.name === req.body.tag.name);
+  const isTag = tagsList.find((a) => a.name! === req.body.tag.name);
   if (!isTag && req.body.tag) {
     const newTag: Tag = {
       id: tagsList.length + 1,
