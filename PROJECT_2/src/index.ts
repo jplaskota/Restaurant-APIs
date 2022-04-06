@@ -4,7 +4,7 @@ import { parse } from "path";
 import { json } from "stream/consumers";
 import { Note } from "./note";
 import { Tag } from "./tag";
-import fs, { write } from "fs";
+import fs from "fs";
 
 const app = express();
 
@@ -18,29 +18,6 @@ app.post("/", function (req: Request, res: Response) {
   console.log(req.body); // e.x. req.body.title
   res.status(200).send("POST Hello World");
 });
-
-//konwersatorium
-
-// async function readFile(filepath: string): Promise<string> {
-//   const a = await fs.promises.readFile(filepath, "utf8");
-//   return a;
-// }
-
-// const aa = await readFile("src/data/notes.json");
-
-// function readFileSync(file: Note, callback: any): string {
-//   return fs.readFileSync(file, "utf8", callback);
-// }
-// let fileData = "";
-// function readFileCallback(err: any, data: string): void {
-//   if (err) {
-//     console.log(err);
-//   } else {
-//     fileData = data;
-//   }
-// }
-
-// koniec konwersatorium
 
 let notes: Note[] = [];
 let tagsList: Tag[] = [];
@@ -83,25 +60,40 @@ app.get("/note/:id", async function (req: Request, res: Response) {
 app.post("/note", async function (req: Request, res: Response) {
   await readStorage();
   let tag: Tag = {
-    id: tagsList.length + 1,
-    name: "basic",
+    id: 0,
+    name: "null",
   };
+
   const basicExists = tagsList.find((a) => a.name === "basic");
   if (!basicExists) {
+    let tag: Tag = {
+      id: tagsList.length + 1,
+      name: "basic",
+    };
     tagsList.push(tag);
   }
   await updateStorage();
+  await readStorage();
 
   if (req.body.tags) {
-    req.body.tags.forEach((a: string) => {
-      const tagExists = tagsList.find((b) => b.name === a);
-      if (tagExists) {
-        tag = tagExists;
-        console.log("nic");
-      } else {
-        tagsList.push(tag);
-      }
-    });
+    const tagExists = tagsList.find((b) => b.name === req.body.tags.name);
+    if (tagExists) {
+      tag.id = tagExists.id;
+      tag.name = tagExists.name;
+      console.log("nic");
+    } else {
+      tag = {
+        id: tagsList.length + 1,
+        name: req.body.tags.name,
+      };
+      tagsList.push(tag);
+    }
+  } else {
+    const basicTag = tagsList.find((b) => b.name === "basic");
+    if (basicTag) {
+      tag.id = basicTag.id;
+      tag.name = basicTag.name;
+    }
   }
 
   if (req.body.title && req.body.content) {
