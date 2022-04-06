@@ -45,38 +45,33 @@ app.post("/", function (req: Request, res: Response) {
 let notes: Note[] = [];
 let tagsList: Tag[] = [];
 
-async function Write(): Promise<void> {
-  var fs = require("fs");
-  await fs.writeFileSync("src/data/notes.json", JSON.stringify(notes));
-  await fs.writeFileSync("src/data/tags.json", JSON.stringify(tagsList));
+async function readStorage(): Promise<void> {
+  try {
+    const datan = await fs.promises.readFile("src/data/notes.json", "utf-8");
+    notes = JSON.parse(datan);
+    const datat = await fs.promises.readFile("src/data/tags.json", "utf-8");
+    tagsList = JSON.parse(datat);
+  } catch (err) {
+    console.log(err);
+  }
 }
 
-function Read(): void {
-  var fs = require("fs");
-
-  var data = fs.readFileSync("src/data/notes.json", "utf8");
-  if (data) {
-    let newNotes: Note[] = JSON.parse(data);
-    notes = newNotes;
+async function updateStorage(): Promise<void> {
+  try {
+    await fs.promises.writeFile("src/data/notes.json", JSON.stringify(notes));
+    await fs.promises.writeFile("src/data/tags.json", JSON.stringify(tagsList));
+  } catch (err) {
+    console.log(err);
   }
-
-  data = fs.readFileSync("src/data/tags.json", "utf8");
-  if (data) {
-    let newTagsList: Tag[] = JSON.parse(data);
-    tagsList = newTagsList;
-  }
-
-  console.log(notes);
-  console.log(tagsList);
 }
 
-app.get("/notes", async function (req: Request, res: Response) {
-  await Read();
+app.get("/notes", function (req: Request, res: Response) {
+  readStorage();
   res.send(notes);
 });
 
 app.get("/note/:id", async function (req: Request, res: Response) {
-  await Read();
+  await readStorage();
   const note = notes.find((a) => a.id === parseInt(req.params.id));
   if (note) {
     res.status(200).send(note);
@@ -85,33 +80,28 @@ app.get("/note/:id", async function (req: Request, res: Response) {
   }
 });
 
-app.post("/note", function (req: Request, res: Response) {
-  Read();
+app.post("/note", async function (req: Request, res: Response) {
+  await readStorage();
   let tag: Tag = {
     id: tagsList.length + 1,
     name: "basic",
   };
+  const basicExists = tagsList.find((a) => a.name === "basic");
+  if (!basicExists) {
+    tagsList.push(tag);
+  }
+  await updateStorage();
 
-  const isTag = tagsList.find((a) => a.name! === req.body.tag.name);
-  if (!isTag && req.body.tag) {
-    const newTag: Tag = {
-      id: tagsList.length + 1,
-      name: req.body.tag.name,
-    };
-    tagsList.push(newTag);
-    tag = newTag;
-  } else if (!req.body.tag) {
-    const basicTag = tagsList.find((a) => a.name === "basic");
-    if (!basicTag) {
-      const basicTag: Tag = {
-        id: tagsList.length + 1,
-        name: "basic",
-      };
-      tagsList.push(basicTag);
-      tag = basicTag;
-    }
-  } else if (isTag) {
-    tag = isTag;
+  if (req.body.tags) {
+    req.body.tags.forEach((a: string) => {
+      const tagExists = tagsList.find((b) => b.name === a);
+      if (tagExists) {
+        tag = tagExists;
+        console.log("nic");
+      } else {
+        tagsList.push(tag);
+      }
+    });
   }
 
   if (req.body.title && req.body.content) {
@@ -124,7 +114,7 @@ app.post("/note", function (req: Request, res: Response) {
     };
 
     notes.push(note);
-    Write();
+    await updateStorage();
 
     res.sendStatus(201);
   } else {
@@ -132,8 +122,8 @@ app.post("/note", function (req: Request, res: Response) {
   }
 });
 
-app.put("/note/:id", (req: Request, res: Response) => {
-  Read();
+app.put("/note/:id", async (req: Request, res: Response) => {
+  await readStorage();
 
   const note = notes.find((a) => a.id === parseInt(req.params.id));
   if (!note) {
@@ -149,14 +139,14 @@ app.put("/note/:id", (req: Request, res: Response) => {
 
     const index = notes.indexOf(note);
     notes[index] = newnote;
-    Write();
+    await updateStorage();
 
     res.status(204).send("Updated");
   }
 });
 
-app.delete("/note/:id", (req: Request, res: Response) => {
-  Read();
+app.delete("/note/:id", async (req: Request, res: Response) => {
+  await readStorage();
 
   const note = notes.find((a) => a.id === parseInt(req.params.id));
   if (!note) {
@@ -164,7 +154,7 @@ app.delete("/note/:id", (req: Request, res: Response) => {
   } else {
     const index = notes.indexOf(note);
     notes.splice(index, 1);
-    Write();
+    await updateStorage();
     res.status(204).send("Deleted");
   }
 });
