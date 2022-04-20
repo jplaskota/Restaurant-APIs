@@ -3,8 +3,12 @@ import { Request, Response } from "express";
 import { parse } from "path";
 import { json } from "stream/consumers";
 import { Note } from "./note";
+import { User } from "./users";
 import { Tag } from "./tag";
 import fs from "fs";
+
+const dotenv = require("dotenv").config();
+const jwt = require("jsonwebtoken");
 
 const app = express();
 
@@ -21,6 +25,18 @@ app.post("/", function (req: Request, res: Response) {
 
 let notes: Note[] = [];
 let tagsList: Tag[] = [];
+let users: User[] = [
+  {
+    login: "admin",
+    password: "admin",
+    id: 1,
+  },
+  {
+    login: "user",
+    password: "user",
+    id: 2,
+  },
+];
 
 async function readStorage(): Promise<void> {
   try {
@@ -42,8 +58,45 @@ async function updateStorage(): Promise<void> {
   }
 }
 
-app.get("/notes", function (req: Request, res: Response) {
-  readStorage();
+function auth(req: any, res: any, next: any) {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (token == null) {
+    return res.sendStatus(401);
+  }
+
+  jwt.verify(token, process.env.JWT_KEY, (err: any, user: any) => {
+    if (err) {
+      return res.sendStatus(403);
+    }
+
+    req.user = user;
+    next();
+  });
+}
+
+// users
+
+app.get("/users", auth, async function (req: any, res) {
+  await readStorage();
+  res.send(users.filter((x) => x.login === req.user.login));
+});
+
+app.post("/user", async function (req: Request, res: Response) {
+  await readStorage();
+  const user: User = req.body;
+  user.id = users.length + 1;
+
+  const token = jwt.sign(user, process.env.JWT_KEY);
+  users.push(user);
+  res.send({ token: token });
+});
+
+//notes
+
+app.get("/notes", async function (req: Request, res: Response) {
+  await readStorage();
   res.send(notes);
 });
 
@@ -84,7 +137,7 @@ app.post("/note", async function (req: Request, res: Response) {
     } else {
       tag = {
         id: tagsList.length + 1,
-        name: req.body.tags.name,
+        name: req.body.tags.name.ToLowerCase(),
       };
       tagsList.push(tag);
     }
@@ -108,7 +161,7 @@ app.post("/note", async function (req: Request, res: Response) {
     notes.push(note);
     await updateStorage();
 
-    res.sendStatus(201);
+    res.sendStatus(201).send("Note Created");
   } else {
     res.status(400).send("Not Created");
   }
@@ -146,6 +199,72 @@ app.delete("/note/:id", async (req: Request, res: Response) => {
   } else {
     const index = notes.indexOf(note);
     notes.splice(index, 1);
+    await updateStorage();
+    res.status(204).send("Deleted");
+  }
+});
+
+//tags
+
+app.get("/tags", function (req: Request, res: Response) {
+  readStorage();
+  res.send(tagsList);
+});
+
+app.get("/tags/:id", async function (req: Request, res: Response) {
+  await readStorage();
+
+  const tag = tagsList.find((a) => a.id === parseInt(req.params.id));
+  if (tag) {
+    res.status(200).send(tag);
+  } else {
+    res.status(404).send("Not Found");
+  }
+});
+
+app.post("/tag", async function (req: Request, res: Response) {
+  await readStorage();
+
+  if (req.body.name) {
+    const tag: Tag = {
+      id: tagsList.length + 1,
+      name: req.body.name,
+    };
+    tagsList.push(tag);
+    await updateStorage();
+    res.status(201).send("Tag Created");
+  }
+});
+
+app.put("/tag/:id", async function (req: Request, res: Response) {
+  await readStorage();
+
+  const tag = tagsList.find((a) => a.id === parseInt(req.params.id));
+  if (!tag) {
+    res.status(404).send("Not Found");
+  } else {
+    const newtag: Tag = {
+      id: tag.id,
+      name: req.body.name,
+    };
+
+    const index = tagsList.indexOf(tag);
+    tagsList[index] = newtag;
+    await updateStorage();
+
+    res.status(204).send("Updated");
+  }
+});
+
+app.delete("/tag/:id", async function (req: Request, res: Response) {
+  await readStorage();
+
+  const tag = tagsList.find((a) => a.id === parseInt(req.params.id));
+  if (!tag) {
+    res.status(404).send("Not Found");
+  } else {
+    const index = tagsList.indexOf(tag);
+    tagsList.splice(index, 1);
     await updateStorage();
     res.status(204).send("Deleted");
   }

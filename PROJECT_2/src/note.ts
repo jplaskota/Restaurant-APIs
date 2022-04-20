@@ -1,4 +1,5 @@
 import { Tag } from "./tag";
+import { User } from "./users";
 
 export type Note = {
   title: string;
@@ -6,4 +7,5 @@ export type Note = {
   createDate?: string;
   tags?: Tag;
   id?: number;
+  user: User;
 };
