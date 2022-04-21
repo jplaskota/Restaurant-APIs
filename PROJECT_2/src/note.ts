@@ -7,5 +7,4 @@ export type Note = {
   createDate?: string;
   tags?: Tag;
   id?: number;
-  user: User;
 };

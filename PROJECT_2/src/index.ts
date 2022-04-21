@@ -7,7 +7,7 @@ import { User } from "./users";
 import { Tag } from "./tag";
 import fs from "fs";
 
-const dotenv = require("dotenv").config();
+require("dotenv").config();
 const jwt = require("jsonwebtoken");
 
 const app = express();
@@ -58,39 +58,19 @@ async function updateStorage(): Promise<void> {
   }
 }
 
-function auth(req: any, res: any, next: any) {
-  const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(" ")[1];
-
-  if (token == null) {
-    return res.sendStatus(401);
-  }
-
-  jwt.verify(token, process.env.JWT_KEY, (err: any, user: any) => {
-    if (err) {
-      return res.sendStatus(403);
-    }
-
-    req.user = user;
-    next();
-  });
-}
-
 // users
 
-app.get("/users", auth, async function (req: any, res) {
+app.get("/users", async function (req: any, res) {
   await readStorage();
-  res.send(users.filter((x) => x.login === req.user.login));
+  res.send(users);
 });
 
-app.post("/user", async function (req: Request, res: Response) {
-  await readStorage();
-  const user: User = req.body;
-  user.id = users.length + 1;
+app.post("/login", async function (req: any, res) {
+  const userName = req.body.login;
+  const user = { name: userName };
 
-  const token = jwt.sign(user, process.env.JWT_KEY);
-  users.push(user);
-  res.send({ token: token });
+  const accessToken = jwt.sign(user, "secret", process.env.ACCESS_TOKEN_SECRET);
+  res.json({ accessToken: accessToken });
 });
 
 //notes
