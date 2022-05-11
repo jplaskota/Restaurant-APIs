@@ -58,22 +58,37 @@ async function updateStorage(): Promise<void> {
   }
 }
 
-// users
+//* users
 
 app.get("/users", async function (req: any, res) {
   await readStorage();
-  res.send(users);
+  res.send(users.filter((user) => user.login === req.user.login));
 });
 
 app.post("/login", async function (req: any, res) {
-  const userName = req.body.login;
-  const user = { name: userName };
+  const user: User = {
+    login: req.body.login,
+    password: req.body.password,
+    id: users.length + 1,
+  };
 
   const accessToken = jwt.sign(user, "secret", process.env.ACCESS_TOKEN_SECRET);
   res.json({ accessToken: accessToken });
 });
 
-//notes
+function auth(req: any, res: any, next: any) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (token == null) return res.sendStatus(401);
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err: any, user: any) => {
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
+  });
+}
+
+//* notes
 
 app.get("/notes", async function (req: Request, res: Response) {
   await readStorage();
@@ -184,7 +199,7 @@ app.delete("/note/:id", async (req: Request, res: Response) => {
   }
 });
 
-//tags
+//* tags
 
 app.get("/tags", function (req: Request, res: Response) {
   readStorage();
