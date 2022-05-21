@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import { ObjectId } from "mongodb";
 import { collections } from "../services/db.service";
 import Danie from "../models/danieModel";
+import Validator from "../services/validator";
 
 const router = express.Router();
 export default router;
@@ -49,7 +50,12 @@ router.post("/", async (req: Request, res: Response) => {
   try {
     const danie = req.body as Danie;
 
-    const result = await collections?.danie?.insertOne(danie);
+    let result = Validator.ValidatorDanie(danie);
+    if (result) {
+      res.status(400).send(result);
+    } else {
+      result = await collections?.danie?.insertOne(danie);
+    }
 
     result
       ? res.status(201).send(result.insertedId)

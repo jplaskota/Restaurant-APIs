@@ -10,7 +10,7 @@ router.use(express.json());
 
 router.get("/", async (_req: Request, res: Response) => {
   try {
-    res.status(200).send("PABE Final project");
+    res.status(200).send("PABE final project");
   } catch (error) {
     let errorMessage = "Błąd";
     if (error instanceof Error) {

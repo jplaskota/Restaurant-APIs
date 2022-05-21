@@ -10,6 +10,7 @@ import zamowienia from "./routes/zamowienie.router";
 import basic from "./routes/basic.router";
 
 const app = express();
+app.use(express.json());
 const port = 3000;
 
 connectToDatabase()
