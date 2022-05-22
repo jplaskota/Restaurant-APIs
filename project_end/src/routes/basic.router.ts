@@ -1,7 +1,4 @@
 import express, { Request, Response } from "express";
-import { ObjectId } from "mongodb";
-import { collections } from "../services/db.service";
-import Danie from "../models/danieModel";
 
 const router = express.Router();
 export default router;

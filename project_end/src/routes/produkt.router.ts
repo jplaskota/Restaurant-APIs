@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import { ObjectId } from "mongodb";
 import { collections } from "../services/db.service";
 import Produkt from "../models/produktModel";
+import Validator from "../services/Validator";
 
 const router = express.Router();
 export default router;
@@ -49,7 +50,13 @@ router.post("/", async (req: Request, res: Response) => {
   try {
     const produkt = req.body as Produkt;
 
-    const result = await collections?.produkt?.insertOne(produkt);
+    let result = await Validator.ValidatorProdukt(produkt);
+
+    if (result) {
+      res.status(400).send(result);
+    } else {
+      result = await collections?.produkt?.insertOne(produkt);
+    }
 
     result
       ? res.status(201).send(result.insertedId)
@@ -68,10 +75,16 @@ router.put("/:id", async (req: Request, res: Response) => {
     const id = req.params.id;
     const produkt = req.body as Produkt;
 
-    const result = await collections?.produkt?.updateOne(
-      { _id: new ObjectId(id) },
-      { $set: produkt }
-    );
+    let result = await Validator.ValidatorProdukt(produkt);
+
+    if (result) {
+      res.status(400).send(result);
+    } else {
+      result = await collections?.produkt?.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: produkt }
+      );
+    }
 
     result
       ? res.status(200).send(result)
@@ -94,12 +107,12 @@ router.delete("/:id", async (req: Request, res: Response) => {
     });
 
     if (result && result.deletedCount) {
-        res.status(202).send("Usunięto produkt");
-      } else if (!result?.deletedCount) {
-        res.status(404).send("Nie znaleziono produktu z podanym id");
-      } else {
-        res.status(400).send("Nie udało się usunąć produktu");
-      }
+      res.status(202).send("Usunięto produkt");
+    } else if (!result?.deletedCount) {
+      res.status(404).send("Nie znaleziono produktu z podanym id");
+    } else {
+      res.status(400).send("Nie udało się usunąć produktu");
+    }
   } catch (error) {
     let errorMessage = "Błąd";
     if (error instanceof Error) {

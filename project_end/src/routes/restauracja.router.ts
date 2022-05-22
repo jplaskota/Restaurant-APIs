@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import { ObjectId } from "mongodb";
 import { collections } from "../services/db.service";
 import Restauracja from "../models/restauracjaModel";
+import Validator from "../services/Validator";
 
 const router = express.Router();
 export default router;
@@ -49,7 +50,13 @@ router.post("/", async (req: Request, res: Response) => {
   try {
     const restauracja = req.body as Restauracja;
 
-    const result = await collections?.restauracja?.insertOne(restauracja);
+    let result = await Validator.ValidatorRestauracja(restauracja);
+
+    if (result) {
+      res.status(400).send(result);
+    } else {
+      result = await collections?.restauracja?.insertOne(restauracja);
+    }
 
     result
       ? res.status(201).send(result.insertedId)
@@ -68,10 +75,16 @@ router.put("/:id", async (req: Request, res: Response) => {
     const id = req.params.id;
     const restauracja = req.body as Restauracja;
 
-    const result = await collections?.restauracja?.updateOne(
-      { _id: new ObjectId(id) },
-      { $set: restauracja }
-    );
+    let result = await Validator.ValidatorRestauracja(restauracja);
+
+    if (result) {
+      res.status(400).send(result);
+    } else {
+      result = await collections?.restauracja?.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: restauracja }
+      );
+    }
 
     result
       ? res.status(200).send(result)

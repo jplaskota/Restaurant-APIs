@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import { ObjectId } from "mongodb";
 import { collections } from "../services/db.service";
 import Danie from "../models/danieModel";
-import Validator from "../services/validator";
+import Validator from "../services/Validator";
 
 const router = express.Router();
 export default router;
@@ -27,9 +27,9 @@ router.get("/", async (_req: Request, res: Response) => {
 
 router.get("/:id", async (req: Request, res: Response) => {
   try {
-    const id = req.params.id;
+    const name = req.params.id;
     const danie = (await collections?.danie?.findOne({
-      _id: new ObjectId(id),
+      name: name,
     })) as unknown as Danie;
 
     if (danie) {
@@ -50,7 +50,7 @@ router.post("/", async (req: Request, res: Response) => {
   try {
     const danie = req.body as Danie;
 
-    let result = Validator.ValidatorDanie(danie);
+    let result = await Validator.ValidatorDanie(danie);
     if (result) {
       res.status(400).send(result);
     } else {
@@ -74,10 +74,16 @@ router.put("/:id", async (req: Request, res: Response) => {
     const id = req.params.id;
     const updatedDanie: Danie = req.body as Danie;
 
-    const result = await collections?.danie?.updateOne(
-      { _id: new ObjectId(id) },
-      { $set: updatedDanie }
-    );
+    let result = await Validator.ValidatorDanie(updatedDanie);
+
+    if (result) {
+      res.status(400).send(result);
+    } else {
+      result = await collections?.danie?.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updatedDanie }
+      );
+    }
 
     result
       ? res.status(200).send(result)

@@ -1,7 +1,8 @@
 import express, { Request, Response } from "express";
 import { ObjectId } from "mongodb";
 import { collections } from "../services/db.service";
-import Pracownik from "../models/PracownikModel";
+import Pracownik from "../models/pracownikModel";
+import Validator from "../services/Validator";
 
 const router = express.Router();
 export default router;
@@ -49,7 +50,12 @@ router.post("/", async (req: Request, res: Response) => {
   try {
     const pracownik = req.body as Pracownik;
 
-    const result = await collections?.pracownik?.insertOne(pracownik);
+    let result = await Validator.ValidatorPracownik(pracownik);
+    if (result) {
+      res.status(400).send(result);
+    } else {
+      result = await collections?.pracownik?.insertOne(pracownik);
+    }
 
     result
       ? res.status(201).send(result.insertedId)
@@ -68,10 +74,25 @@ router.put("/:id", async (req: Request, res: Response) => {
     const id = req.params.id;
     const updatedPracownik = req.body as Pracownik;
 
-    const result = await collections?.pracownik?.updateOne(
-      { _id: new ObjectId(id) },
-      { $set: updatedPracownik }
-    );
+    let result = await Validator.ValidatorPracownik(updatedPracownik);
+
+    if (result) {
+      res.status(400).send(result);
+    } else {
+      /// exists
+      const pracownikExists = collections?.pracownik?.find(updatedPracownik);
+
+      if (pracownikExists) {
+        const info: any = {};
+        info.err = "Employee already exists";
+        res.status(500).send(info);
+      }
+
+      result = await collections?.pracownik?.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updatedPracownik }
+      );
+    }
 
     result
       ? res.status(200).send(result)

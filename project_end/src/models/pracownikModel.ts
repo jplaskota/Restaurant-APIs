@@ -5,6 +5,6 @@ export default class Pracownik {
     public name: string,
     public surname: string,
     public position: string,
-    public id?: ObjectId
+    public id: ObjectId
   ) {}
 }

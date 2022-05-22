@@ -5,6 +5,6 @@ export default class Stolik {
     public name: string,
     public seats: number,
     public status: string,
-    public id?: ObjectId
+    public id: ObjectId
   ) {}
 }

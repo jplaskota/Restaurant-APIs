@@ -5,8 +5,17 @@ import Produkt from "../models/produktModel";
 import Stolik from "../models/stolikModel";
 
 export default class Validator {
-  public static ValidatorDanie(danie: any): any {
+  public static async ValidatorDanie(danie: any): Promise<any> {
     const errors: string[] = [];
+
+    /// exists
+    const danieExists = await collections?.danie?.findOne(danie);
+
+    if (danieExists !== null) {
+      const info: any = {};
+      info.err = "Dish already exists";
+      errors.push(info);
+    }
 
     /// name
     errors.push(Validator.Text(danie.name, "Name"));
@@ -33,8 +42,17 @@ export default class Validator {
     }
   }
 
-  public static ValidatorPracownik(pracownik: any): any {
+  public static async ValidatorPracownik(pracownik: any): Promise<any> {
     const errors: string[] = [];
+
+    /// exists
+    const pracownikExists = await collections?.pracownik?.findOne(pracownik);
+
+    if (pracownikExists !== null) {
+      const info: any = {};
+      info.err = "Employee already exists";
+      errors.push(info);
+    }
 
     /// name
     errors.push(Validator.Text(pracownik.name, "Name"));
@@ -51,8 +69,17 @@ export default class Validator {
     }
   }
 
-  public static ValidatorProdukt(produkt: any): any {
+  public static async ValidatorProdukt(produkt: any): Promise<any> {
     const errors: string[] = [];
+
+    /// exists
+    const produktExists = collections?.produkt?.find(produkt);
+
+    if (produktExists !== null) {
+      const info: any = {};
+      info.err = "Produkt already exists";
+      errors.push(info);
+    }
 
     /// name
     errors.push(Validator.Text(produkt.name, "Name"));
@@ -82,8 +109,17 @@ export default class Validator {
     }
   }
 
-  public static ValidatorRestauracja(restauracja: any): any {
+  public static async ValidatorRestauracja(restauracja: any): Promise<any> {
     const errors: string[] = [];
+
+    /// exists
+    const restauracjaExists = collections?.restauracja?.find(restauracja);
+
+    if (restauracjaExists !== null) {
+      const info: any = {};
+      info.err = "Restaurant already exists";
+      errors.push(info);
+    }
 
     /// name
     errors.push(Validator.Text(restauracja.name, "Name"));
@@ -133,12 +169,20 @@ export default class Validator {
     }
   }
 
-  public static ValidatorStolik(stolik: any): any {
+  public static async ValidatorStolik(stolik: any): Promise<any> {
     const errors: string[] = [];
+
+    /// exists
+    const stolikExists = collections?.stolik?.find(stolik);
+
+    if (stolikExists !== null) {
+      const info: any = {};
+      info.err = "Table already exists";
+      errors.push(info);
+    }
 
     /// name
     errors.push(Validator.Text(stolik.name, "Name"));
-
     /// seats
     errors.push(Validator.Number(stolik.seats, "Seats"));
 
@@ -203,36 +247,42 @@ export default class Validator {
     errors.push(Validator.Text(zamowienie.address, "Address"));
 
     /// dishes
-    const danie = (await collections?.danie?.find(
-      zamowienie?.danie
-    )) as unknown as Danie;
+    if (zamowienie.danie) {
+      const danie = (await collections?.danie?.find(
+        zamowienie.danie
+      )) as unknown as Danie[];
 
-    if (danie === undefined) {
-      const info: any = {};
-      info.err = "Danie not found";
-      errors.push(info);
+      if (danie === undefined) {
+        const info: any = {};
+        info.err = "Danie not found";
+        errors.push(info);
+      }
     }
 
     /// products
-    const produkt = (await collections?.produkt?.find(
-      zamowienie?.produkt
-    )) as unknown as Produkt;
+    if (zamowienie.produkt) {
+      const produkt = (await collections?.produkt?.find(
+        zamowienie?.produkt
+      )) as unknown as Produkt[];
 
-    if (produkt === undefined) {
-      const info: any = {};
-      info.err = "Produkt not found";
-      errors.push(info);
+      if (produkt === undefined) {
+        const info: any = {};
+        info.err = "Produkt not found";
+        errors.push(info);
+      }
     }
 
     /// table
-    const stolik = (await collections?.stolik?.find(
-      zamowienie?.stolik
-    )) as unknown as Stolik;
+    if (zamowienie.table) {
+      const stolik = (await collections?.stolik?.find(
+        zamowienie?.stolik
+      )) as unknown as Stolik;
 
-    if (stolik === undefined) {
-      const info: any = {};
-      info.err = "Stolik not found";
-      errors.push(info);
+      if (stolik === undefined) {
+        const info: any = {};
+        info.err = "Stolik not found";
+        errors.push(info);
+      }
     }
 
     /// if error
@@ -252,7 +302,7 @@ export default class Validator {
       nameof === "Customer" ||
       nameof === "Address"
     ) {
-      if (!text && nameof !== "Address") {
+      if (!text) {
         errors.err = nameof + " is required";
         return errors;
       } else if (typeof text !== "string") {
@@ -264,8 +314,9 @@ export default class Validator {
       } else if (text.length > 100) {
         errors.err = nameof + " must be less than 50 characters long";
         return errors;
-      } else if (!/^[a-zA-Z0-9]+$/.test(text)) {
-        errors.err = nameof + " must contain only letters and numbers";
+      } else if (!/^[a-zA-Z0-9 _/ąćęłńóśżźĄĆĘŁŃÓŚŻŹ]+$/.test(text)) {
+        errors.err =
+          nameof + " can contain only letters, numbers, ' _ , / ' and space";
         return errors;
       }
     } else if (nameof === "Description") {

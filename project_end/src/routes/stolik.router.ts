@@ -1,7 +1,8 @@
 import express, { Request, Response } from "express";
 import { ObjectId } from "mongodb";
 import { collections } from "../services/db.service";
-import Danie from "../models/danieModel";
+import Stolik from "../models/stolikModel";
+import Validator from "../services/Validator";
 
 const router = express.Router();
 export default router;
@@ -10,11 +11,11 @@ router.use(express.json());
 
 router.get("/", async (_req: Request, res: Response) => {
   try {
-    const danie = (await collections?.danie
+    const stolik = (await collections?.stolik
       ?.find({})
-      .toArray()) as unknown as Danie[];
+      .toArray()) as unknown as Stolik[];
 
-    res.status(200).send(danie);
+    res.status(200).send(stolik);
   } catch (error) {
     let errorMessage = "Błąd";
     if (error instanceof Error) {
@@ -27,14 +28,14 @@ router.get("/", async (_req: Request, res: Response) => {
 router.get("/:id", async (req: Request, res: Response) => {
   try {
     const id = req.params.id;
-    const danie = (await collections?.danie?.findOne({
+    const stolik = (await collections?.stolik?.findOne({
       _id: new ObjectId(id),
-    })) as unknown as Danie;
+    })) as unknown as Stolik;
 
-    if (danie) {
-      res.status(200).send(danie);
+    if (stolik) {
+      res.status(200).send(stolik);
     } else {
-      res.status(404).send("Nie znaleziono dania z takim id");
+      res.status(404).send("Nie znaleziono stolika z takim id");
     }
   } catch (error) {
     let errorMessage = "Błąd";
@@ -47,13 +48,19 @@ router.get("/:id", async (req: Request, res: Response) => {
 
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const danie = req.body as Danie;
+    const stolik = req.body as Stolik;
 
-    const result = await collections?.danie?.insertOne(danie);
+    let result = await Validator.ValidatorStolik(stolik);
+
+    if (result) {
+      res.status(400).send(result);
+    } else {
+      result = await collections?.stolik?.insertOne(stolik);
+    }
 
     result
       ? res.status(201).send(result.insertedId)
-      : res.status(404).send("Nie udało się dodać dania");
+      : res.status(404).send("Nie udało się dodać stolika");
   } catch (error) {
     let errorMessage = "Błąd";
     if (error instanceof Error) {
@@ -66,16 +73,22 @@ router.post("/", async (req: Request, res: Response) => {
 router.put("/:id", async (req: Request, res: Response) => {
   try {
     const id = req.params.id;
-    const danie = req.body as Danie;
+    const stolik = req.body as Stolik;
 
-    const result = await collections?.danie?.updateOne(
-      { _id: new ObjectId(id) },
-      { $set: danie }
-    );
+    let result = await Validator.ValidatorStolik(stolik);
+
+    if (result) {
+      res.status(400).send(result);
+    } else {
+      result = await collections?.stolik?.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: stolik }
+      );
+    }
 
     result
       ? res.status(200).send(result.modifiedCount)
-      : res.status(404).send("Nie udało się zaktualizować dania");
+      : res.status(404).send("Nie udało się zaktualizować stolika");
   } catch (error) {
     let errorMessage = "Błąd";
     if (error instanceof Error) {
@@ -89,7 +102,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
   try {
     const id = req.params.id;
 
-    const result = await collections?.danie?.deleteOne({
+    const result = await collections?.stolik?.deleteOne({
       _id: new ObjectId(id),
     });
 
