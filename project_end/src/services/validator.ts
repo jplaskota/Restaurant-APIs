@@ -3,6 +3,7 @@ import Pracownik from "../models/pracownikModel";
 import Danie from "../models/danieModel";
 import Produkt from "../models/produktModel";
 import Stolik from "../models/stolikModel";
+import Rezerwacja from "../models/rezerwacjaModel";
 
 export default class Validator {
   public static async ValidatorDanie(danie: any): Promise<any> {
@@ -73,7 +74,7 @@ export default class Validator {
     const errors: string[] = [];
 
     /// exists
-    const produktExists = collections?.produkt?.find(produkt);
+    const produktExists = collections?.produkt?.findOne(produkt);
 
     if (produktExists !== null) {
       const info: any = {};
@@ -113,7 +114,7 @@ export default class Validator {
     const errors: string[] = [];
 
     /// exists
-    const restauracjaExists = collections?.restauracja?.find(restauracja);
+    const restauracjaExists = collections?.restauracja?.findOne(restauracja);
 
     if (restauracjaExists !== null) {
       const info: any = {};
@@ -145,11 +146,58 @@ export default class Validator {
     }
   }
 
-  public static ValidatorRezerwacja(rezerwacja: any): any {
+  public static async ValidatorRezerwacja(rezerwacja: any): Promise<any> {
     const errors: string[] = [];
+
+    /// exists
+    const rezerwacjaExists = collections?.rezerwacja?.findOne(rezerwacja);
+
+    if (rezerwacjaExists !== null) {
+      const info: any = {};
+      info.err = "Reservation already exists";
+      errors.push(info);
+    }
 
     /// table
     errors.push(Validator.Text(rezerwacja.table, "Table"));
+
+    /// table exists
+    const stolikExists = collections?.rezerwacja?.find(rezerwacja.stolik);
+
+    if (stolikExists === null) {
+      const info: any = {};
+      info.err = "Table does not exist";
+      errors.push(info);
+    } else {
+      const stolikStatusList = (await collections?.rezerwacja
+        ?.find({ stolik: rezerwacja.stolik })
+        .filter(
+          ((a) =>
+            a.dateStart >= rezerwacja.dateStart &&
+            a.dateStart < rezerwacja.dateEnd) ||
+            ((a) =>
+              a.dateStart <= rezerwacja.dateStart &&
+              a.dateEnd >= rezerwacja.dateStart)
+        )
+        .toArray()) as unknown as Rezerwacja[];
+
+      // TODO: przetestować czy działa
+      // const stolikStatus = stolikStatusList.filter(
+      //   ((a) =>
+      //     a.dateStart >= rezerwacja.dateStart &&
+      //     a.dateStart < rezerwacja.dateEnd) ||
+      //     ((a) =>
+      //       a.dateStart <= rezerwacja.dateStart &&
+      //       a.dateEnd >= rezerwacja.dateStart)
+      // );
+
+      // TODO: list length = 0 albo list = null | do przetestowania
+      if (stolikStatusList !== null) {
+        const info: any = {};
+        info.err = "Table is busy";
+        errors.push(info);
+      }
+    }
 
     /// dateStart
     errors.push(Validator.Date(rezerwacja.dateStart, "DateStart"));
