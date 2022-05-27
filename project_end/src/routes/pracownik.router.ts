@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import { ObjectId } from "mongodb";
 import { collections } from "../services/db.service";
 import Pracownik from "../models/pracownikModel";
-import Validator from "../services/Validator";
+import Validator from "../services/validator";
 
 const router = express.Router();
 export default router;
@@ -79,24 +79,14 @@ router.put("/:id", async (req: Request, res: Response) => {
     if (result) {
       res.status(400).send(result);
     } else {
-      /// exists
-      const pracownikExists = collections?.pracownik?.find(updatedPracownik);
-
-      if (pracownikExists) {
-        const info: any = {};
-        info.err = "Employee already exists";
-        res.status(500).send(info);
-      }
-
       result = await collections?.pracownik?.updateOne(
         { _id: new ObjectId(id) },
         { $set: updatedPracownik }
       );
+      result
+        ? res.status(200).send("Udało się zaktualizować pracownika")
+        : res.status(404).send("Nie udało się zaktualizować pracownika");
     }
-
-    result
-      ? res.status(200).send(result)
-      : res.status(404).send("Nie udało się zaktualizować pracownika");
   } catch (error) {
     let errorMessage = "Błąd";
     if (error instanceof Error) {

@@ -14,7 +14,6 @@ export default class Zamowienie {
     public address?: string,
     public dish?: Danie[],
     public product?: Produkt[],
-    public table?: Stolik,
-    public id?: ObjectId
+    public table?: Stolik
   ) {}
 }

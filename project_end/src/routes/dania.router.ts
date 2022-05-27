@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import { ObjectId } from "mongodb";
 import { collections } from "../services/db.service";
 import Danie from "../models/danieModel";
-import Validator from "../services/Validator";
+import Validator from "../services/validator";
 
 const router = express.Router();
 export default router;
@@ -27,9 +27,9 @@ router.get("/", async (_req: Request, res: Response) => {
 
 router.get("/:id", async (req: Request, res: Response) => {
   try {
-    const name = req.params.id;
+    const id = req.params.id;
     const danie = (await collections?.danie?.findOne({
-      name: name,
+      _id: new ObjectId(id),
     })) as unknown as Danie;
 
     if (danie) {
@@ -51,6 +51,7 @@ router.post("/", async (req: Request, res: Response) => {
     const danie = req.body as Danie;
 
     let result = await Validator.ValidatorDanie(danie);
+
     if (result) {
       res.status(400).send(result);
     } else {
@@ -83,11 +84,11 @@ router.put("/:id", async (req: Request, res: Response) => {
         { _id: new ObjectId(id) },
         { $set: updatedDanie }
       );
-    }
 
-    result
-      ? res.status(200).send(result)
-      : res.status(404).send("Nie udało się zaktualizować dania");
+      result
+        ? res.status(200).send("Udało się zaktualizować dania")
+        : res.status(404).send("Nie udało się zaktualizować dania");
+    }
   } catch (error) {
     let errorMessage = "Błąd";
     if (error instanceof Error) {

@@ -1,13 +1,12 @@
 import { ObjectId } from "mongodb";
-import Stolik from "./stolikModel";
 
 export default class Rezerwacja {
   constructor(
-    public table: Stolik,
+    public table: ObjectId,
     public dateStart: Date,
     public dateEnd: Date,
+    public seats: number,
     public customer: string,
-    public phone: string,
-    public id?: ObjectId
+    public phone: string
   ) {}
 }

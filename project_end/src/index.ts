@@ -17,7 +17,7 @@ connectToDatabase()
   .then(() => {
     app.use("/dania", dania);
     app.use("/pracownicy", pracownicy);
-    app.use("/produkt", produkt);
+    app.use("/produkty", produkt);
     app.use("/restauracje", restauracje);
     app.use("/rezerwacje", rezerwacje);
     app.use("/stoliki", stoliki);

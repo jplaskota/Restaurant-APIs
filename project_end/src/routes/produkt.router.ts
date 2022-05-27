@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import { ObjectId } from "mongodb";
 import { collections } from "../services/db.service";
 import Produkt from "../models/produktModel";
-import Validator from "../services/Validator";
+import Validator from "../services/validator";
 
 const router = express.Router();
 export default router;
@@ -84,11 +84,11 @@ router.put("/:id", async (req: Request, res: Response) => {
         { _id: new ObjectId(id) },
         { $set: produkt }
       );
-    }
 
-    result
-      ? res.status(200).send(result)
-      : res.status(404).send("Nie udało się zaktualizować produktu");
+      result
+        ? res.status(200).send("Udało się zaktualizować produktu")
+        : res.status(404).send("Nie udało się zaktualizować produktu");
+    }
   } catch (error) {
     let errorMessage = "Błąd";
     if (error instanceof Error) {

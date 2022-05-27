@@ -1,7 +1,8 @@
 import express, { Request, Response } from "express";
 import { ObjectId } from "mongodb";
 import { collections } from "../services/db.service";
-import Danie from "../models/danieModel";
+import Rezerwacja from "../models/rezerwacjaModel";
+import Validator from "../services/validator";
 
 const router = express.Router();
 export default router;
@@ -10,11 +11,11 @@ router.use(express.json());
 
 router.get("/", async (_req: Request, res: Response) => {
   try {
-    const danie = (await collections?.danie
+    const rezerwacja = (await collections?.rezerwacja
       ?.find({})
-      .toArray()) as unknown as Danie[];
+      .toArray()) as unknown as Rezerwacja[];
 
-    res.status(200).send(danie);
+    res.status(200).send(rezerwacja);
   } catch (error) {
     let errorMessage = "Błąd";
     if (error instanceof Error) {
@@ -27,14 +28,14 @@ router.get("/", async (_req: Request, res: Response) => {
 router.get("/:id", async (req: Request, res: Response) => {
   try {
     const id = req.params.id;
-    const danie = (await collections?.danie?.findOne({
+    const rezerwacja = (await collections?.rezerwacja?.findOne({
       _id: new ObjectId(id),
-    })) as unknown as Danie;
+    })) as unknown as Rezerwacja;
 
-    if (danie) {
-      res.status(200).send(danie);
+    if (rezerwacja) {
+      res.status(200).send(rezerwacja);
     } else {
-      res.status(404).send("Nie znaleziono dania z takim id");
+      res.status(404).send("Nie znaleziono rezerwacji z takim id");
     }
   } catch (error) {
     let errorMessage = "Błąd";
@@ -47,9 +48,32 @@ router.get("/:id", async (req: Request, res: Response) => {
 
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const danie = req.body as Danie;
+    const input = req.body as Rezerwacja;
 
-    const result = await collections?.danie?.insertOne(danie);
+    let result = await Validator.ValidatorRezerwacja(input);
+
+    if (result) {
+      res.status(400).send(result);
+    } else {
+      const rezerwacja: Rezerwacja = {
+        table: new ObjectId(input.table),
+        dateStart: new Date(
+          new Date(input.dateStart).setHours(
+            new Date(input.dateStart).getHours() + 2
+          )
+        ),
+        dateEnd: new Date(
+          new Date(input.dateEnd).setHours(
+            new Date(input.dateEnd).getHours() + 2
+          )
+        ),
+        customer: input.customer,
+        seats: input.seats,
+        phone: input.phone,
+      };
+
+      result = await collections?.rezerwacja?.insertOne(rezerwacja);
+    }
 
     result
       ? res.status(201).send(result.insertedId)
@@ -66,16 +90,16 @@ router.post("/", async (req: Request, res: Response) => {
 router.put("/:id", async (req: Request, res: Response) => {
   try {
     const id = req.params.id;
-    const updatedDanie: Danie = req.body as Danie;
+    const updatedRezerwacja: Rezerwacja = req.body as Rezerwacja;
 
-    const result = await collections?.danie?.updateOne(
+    const result = await collections?.rezerwacja?.updateOne(
       { _id: new ObjectId(id) },
-      { $set: updatedDanie }
+      { $set: updatedRezerwacja }
     );
 
     result
       ? res.status(200).send(result)
-      : res.status(404).send("Nie udało się zaktualizować dania");
+      : res.status(404).send("Nie udało się zaktualizować rezerwacji");
   } catch (error) {
     let errorMessage = "Błąd";
     if (error instanceof Error) {
@@ -89,7 +113,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
   try {
     const id = req.params.id;
 
-    const result = await collections?.danie?.deleteOne({
+    const result = await collections?.rezerwacja?.deleteOne({
       _id: new ObjectId(id),
     });
 

@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import { ObjectId } from "mongodb";
 import { collections } from "../services/db.service";
 import Restauracja from "../models/restauracjaModel";
-import Validator from "../services/Validator";
+import Validator from "../services/validator";
 
 const router = express.Router();
 export default router;
@@ -87,7 +87,7 @@ router.put("/:id", async (req: Request, res: Response) => {
     }
 
     result
-      ? res.status(200).send(result)
+      ? res.status(200).send("Udało się dodać restauracji")
       : res.status(404).send("Nie udało się zaktualizować restauracji");
   } catch (error) {
     let errorMessage = "Błąd";

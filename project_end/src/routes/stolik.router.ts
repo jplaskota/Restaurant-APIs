@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import { ObjectId } from "mongodb";
 import { collections } from "../services/db.service";
 import Stolik from "../models/stolikModel";
-import Validator from "../services/Validator";
+import Validator from "../services/validator";
 
 const router = express.Router();
 export default router;
@@ -84,11 +84,11 @@ router.put("/:id", async (req: Request, res: Response) => {
         { _id: new ObjectId(id) },
         { $set: stolik }
       );
-    }
 
-    result
-      ? res.status(200).send(result.modifiedCount)
-      : res.status(404).send("Nie udało się zaktualizować stolika");
+      result
+        ? res.status(200).send("Udało się zaktualizować stolika")
+        : res.status(404).send("Nie udało się zaktualizować stolika");
+    }
   } catch (error) {
     let errorMessage = "Błąd";
     if (error instanceof Error) {

@@ -4,7 +4,7 @@ import Danie from "../models/danieModel";
 import Produkt from "../models/produktModel";
 import Stolik from "../models/stolikModel";
 import Rezerwacja from "../models/rezerwacjaModel";
-
+import { ObjectId } from "mongodb";
 export default class Validator {
   public static async ValidatorDanie(danie: any): Promise<any> {
     const errors: string[] = [];
@@ -74,7 +74,7 @@ export default class Validator {
     const errors: string[] = [];
 
     /// exists
-    const produktExists = collections?.produkt?.findOne(produkt);
+    const produktExists = await collections?.produkt?.findOne(produkt);
 
     if (produktExists !== null) {
       const info: any = {};
@@ -114,7 +114,9 @@ export default class Validator {
     const errors: string[] = [];
 
     /// exists
-    const restauracjaExists = collections?.restauracja?.findOne(restauracja);
+    const restauracjaExists = await collections?.restauracja?.findOne(
+      restauracja
+    );
 
     if (restauracjaExists !== null) {
       const info: any = {};
@@ -148,54 +150,69 @@ export default class Validator {
 
   public static async ValidatorRezerwacja(rezerwacja: any): Promise<any> {
     const errors: string[] = [];
+    const info: any = {};
 
     /// exists
-    const rezerwacjaExists = collections?.rezerwacja?.findOne(rezerwacja);
+    const rezerwacjaExists = await collections?.rezerwacja?.findOne(rezerwacja);
 
     if (rezerwacjaExists !== null) {
-      const info: any = {};
       info.err = "Reservation already exists";
       errors.push(info);
     }
 
-    /// table
-    errors.push(Validator.Text(rezerwacja.table, "Table"));
-
     /// table exists
-    const stolikExists = collections?.rezerwacja?.find(rezerwacja.stolik);
-
-    if (stolikExists === null) {
-      const info: any = {};
-      info.err = "Table does not exist";
+    if (rezerwacja.table === null) {
+      info.err = "Table is required";
       errors.push(info);
     } else {
-      const stolikStatusList = (await collections?.rezerwacja
-        ?.find({ stolik: rezerwacja.stolik })
-        .filter(
-          ((a) =>
-            a.dateStart >= rezerwacja.dateStart &&
-            a.dateStart < rezerwacja.dateEnd) ||
-            ((a) =>
-              a.dateStart <= rezerwacja.dateStart &&
-              a.dateEnd >= rezerwacja.dateStart)
-        )
-        .toArray()) as unknown as Rezerwacja[];
+      const stolikExists = await collections?.stolik?.findOne({
+        _id: new ObjectId(rezerwacja.table),
+      });
 
-      // TODO: przetestować czy działa
-      // const stolikStatus = stolikStatusList.filter(
-      //   ((a) =>
-      //     a.dateStart >= rezerwacja.dateStart &&
-      //     a.dateStart < rezerwacja.dateEnd) ||
-      //     ((a) =>
-      //       a.dateStart <= rezerwacja.dateStart &&
-      //       a.dateEnd >= rezerwacja.dateStart)
-      // );
-
-      // TODO: list length = 0 albo list = null | do przetestowania
-      if (stolikStatusList !== null) {
-        const info: any = {};
-        info.err = "Table is busy";
+      if (stolikExists === null || stolikExists === undefined) {
+        info.err = "Table does not exist";
         errors.push(info);
+      } else {
+        const stolikStatusList = (await collections?.rezerwacja?.find({
+          table: new ObjectId(rezerwacja.table),
+        })) as unknown as Rezerwacja[];
+
+        await stolikStatusList.forEach((element) => {
+          const eds = element.dateStart.getTime();
+          const ede = element.dateEnd.getTime();
+          const rds = new Date(
+            new Date(rezerwacja.dateStart).setHours(
+              new Date(rezerwacja.dateStart).getHours() + 2
+            )
+          ).getTime();
+          const rde = new Date(
+            new Date(rezerwacja.dateEnd).setHours(
+              new Date(rezerwacja.dateEnd).getHours() + 2
+            )
+          ).getTime();
+
+          if (
+            (eds <= rds && ede >= rds) ||
+            (eds <= rde && ede >= rde) ||
+            (eds >= rds && ede <= rde)
+          ) {
+            info.err = "Table is busy";
+            errors.push(info);
+          }
+        });
+      }
+
+      if (rezerwacja.seats === null) {
+        info.err = "Seats is required";
+        errors.push(info);
+      } else if (rezerwacja.seats < 1) {
+        info.err = "Seats must be greater than 0";
+        errors.push(info);
+      } else {
+        if (stolikExists?.seats < rezerwacja.seats) {
+          info.err = "Table is not big enough";
+          errors.push(info);
+        }
       }
     }
 
@@ -221,7 +238,7 @@ export default class Validator {
     const errors: string[] = [];
 
     /// exists
-    const stolikExists = collections?.stolik?.find(stolik);
+    const stolikExists = await collections?.stolik?.findOne(stolik);
 
     if (stolikExists !== null) {
       const info: any = {};
@@ -229,19 +246,16 @@ export default class Validator {
       errors.push(info);
     }
 
+    if (stolik.seats < 1) {
+      const info: any = {};
+      info.err = "Table seats must be greater than 0";
+      errors.push(info);
+    }
+
     /// name
     errors.push(Validator.Text(stolik.name, "Name"));
     /// seats
     errors.push(Validator.Number(stolik.seats, "Seats"));
-
-    /// status
-    enum Status {
-      "free",
-      "busy",
-      "reserved",
-    }
-
-    errors.push(Validator.Category(stolik.status, Status, "Status"));
 
     /// if error
     if (errors.some((error: any) => error?.err.length !== undefined)) {
@@ -482,8 +496,9 @@ export default class Validator {
       errors.err = nameof + " must be a string";
       return errors;
     }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      errors.err = nameof + " must be in the format YYYY-MM-DD";
+    if (!/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})?$/.test(date)) {
+      errors.err =
+        nameof + " must be in the format YYYY-MM-DD + 'T' + HH:MM:SSS + 'Z'";
       return errors;
     }
   }

@@ -7,6 +7,5 @@ export default class Produkt {
     public price: number,
     public category: string,
     public unit: number,
-    public id: ObjectId
   ) {}
 }
