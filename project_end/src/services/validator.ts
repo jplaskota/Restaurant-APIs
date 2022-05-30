@@ -263,6 +263,7 @@ export default class Validator {
     }
   }
 
+  //TODO: test validation on postman
   public static async ValidatorZamowienie(zamowienie: any): Promise<any> {
     const errors: string[] = [];
 

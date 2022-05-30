@@ -1,7 +1,8 @@
 import express, { Request, Response } from "express";
 import { ObjectId } from "mongodb";
 import { collections } from "../services/db.service";
-import Danie from "../models/danieModel";
+import Zamowienie from "../models/zamowienieModel";
+import Validator from "../services/validator";
 
 const router = express.Router();
 export default router;
@@ -10,11 +11,11 @@ router.use(express.json());
 
 router.get("/", async (_req: Request, res: Response) => {
   try {
-    const danie = (await collections?.danie
+    const zamownienie = (await collections?.zamowienie
       ?.find({})
-      .toArray()) as unknown as Danie[];
+      .toArray()) as unknown as Zamowienie[];
 
-    res.status(200).send(danie);
+    res.status(200).send(zamownienie);
   } catch (error) {
     let errorMessage = "Błąd";
     if (error instanceof Error) {
@@ -27,14 +28,14 @@ router.get("/", async (_req: Request, res: Response) => {
 router.get("/:id", async (req: Request, res: Response) => {
   try {
     const id = req.params.id;
-    const danie = (await collections?.danie?.findOne({
+    const zamowienie = (await collections?.zamowienie?.findOne({
       _id: new ObjectId(id),
-    })) as unknown as Danie;
+    })) as unknown as Zamowienie;
 
-    if (danie) {
-      res.status(200).send(danie);
+    if (zamowienie) {
+      res.status(200).send(zamowienie);
     } else {
-      res.status(404).send("Nie znaleziono dania z takim id");
+      res.status(404).send("Nie znaleziono zamownienia z takim id");
     }
   } catch (error) {
     let errorMessage = "Błąd";
@@ -47,13 +48,19 @@ router.get("/:id", async (req: Request, res: Response) => {
 
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const danie = req.body as Danie;
+    const zamowienie = req.body as Zamowienie;
 
-    const result = await collections?.danie?.insertOne(danie);
+    let result = await Validator.ValidatorZamowienie(zamowienie);
+
+    if (result) {
+      res.status(400).send(result);
+    } else {
+      result = await collections?.zamowienie?.insertOne(zamowienie);
+    }
 
     result
       ? res.status(201).send(result.insertedId)
-      : res.status(404).send("Nie udało się dodać dania");
+      : res.status(404).send("Nie udało się dodać zamowienia");
   } catch (error) {
     let errorMessage = "Błąd";
     if (error instanceof Error) {
@@ -66,16 +73,21 @@ router.post("/", async (req: Request, res: Response) => {
 router.put("/:id", async (req: Request, res: Response) => {
   try {
     const id = req.params.id;
-    const danie = req.body as Danie;
+    const zamowienie = req.body as Zamowienie;
 
-    const result = await collections?.danie?.updateOne(
-      { _id: new ObjectId(id) },
-      { $set: danie }
-    );
+    let result = await Validator.ValidatorZamowienie(zamowienie);
 
+    if (result) {
+      res.status(400).send(result);
+    } else {
+      result = await collections?.zamowienie?.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: zamowienie }
+      );
+    }
     result
       ? res.status(201).send(result)
-      : res.status(404).send("Nie udało się dodać dania");
+      : res.status(404).send("Nie udało się dodać zamowienia");
   } catch (error) {
     let errorMessage = "Błąd";
     if (error instanceof Error) {
@@ -89,7 +101,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
   try {
     const id = req.params.id;
 
-    const result = await collections?.danie?.deleteOne({
+    const result = await collections?.zamowienie?.deleteOne({
       _id: new ObjectId(id),
     });
 

@@ -84,11 +84,10 @@ router.put("/:id", async (req: Request, res: Response) => {
         { _id: new ObjectId(id) },
         { $set: updatedDanie }
       );
-
-      result
-        ? res.status(200).send("Udało się zaktualizować dania")
-        : res.status(404).send("Nie udało się zaktualizować dania");
     }
+    result
+      ? res.status(200).send("Udało się zaktualizować dania")
+      : res.status(404).send("Nie udało się zaktualizować dania");
   } catch (error) {
     let errorMessage = "Błąd";
     if (error instanceof Error) {

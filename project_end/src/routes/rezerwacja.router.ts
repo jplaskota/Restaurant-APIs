@@ -92,13 +92,18 @@ router.put("/:id", async (req: Request, res: Response) => {
     const id = req.params.id;
     const updatedRezerwacja: Rezerwacja = req.body as Rezerwacja;
 
-    const result = await collections?.rezerwacja?.updateOne(
-      { _id: new ObjectId(id) },
-      { $set: updatedRezerwacja }
-    );
+    let result = await Validator.ValidatorRezerwacja(updatedRezerwacja);
 
+    if (result) {
+      res.status(400).send(result);
+    } else {
+      result = await collections?.rezerwacja?.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updatedRezerwacja }
+      );
+    }
     result
-      ? res.status(200).send(result)
+      ? res.status(200).send("Udało się zaktualizować rezerwacji")
       : res.status(404).send("Nie udało się zaktualizować rezerwacji");
   } catch (error) {
     let errorMessage = "Błąd";
