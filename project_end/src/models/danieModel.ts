@@ -5,6 +5,7 @@ export default class Danie {
     public name: string,
     public price: number,
     public category: string,
-    public description?: string
+    public description?: string,
+    public _id?: ObjectId
   ) {}
 }

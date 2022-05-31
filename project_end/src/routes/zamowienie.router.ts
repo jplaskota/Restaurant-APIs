@@ -48,7 +48,31 @@ router.get("/:id", async (req: Request, res: Response) => {
 
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const zamowienie = req.body as Zamowienie;
+    const input = req.body as Zamowienie;
+
+    let price: number = 0;
+    if (input.dish) {
+      input.dish.forEach((dish) => {
+        price += dish.price;
+      });
+    }
+    if (input.product) {
+      input.product.forEach((product) => {
+        price += product.price;
+      });
+    }
+
+    const zamowienie: Zamowienie = {
+      orderType: input.orderType,
+      employee: input.employee,
+      status: input.status,
+      price: price,
+      orderDate: new Date(),
+      address: input.address,
+      dish: input.dish,
+      product: input.product,
+      table: input.table,
+    };
 
     let result = await Validator.ValidatorZamowienie(zamowienie);
 
@@ -73,7 +97,31 @@ router.post("/", async (req: Request, res: Response) => {
 router.put("/:id", async (req: Request, res: Response) => {
   try {
     const id = req.params.id;
-    const zamowienie = req.body as Zamowienie;
+    const input = req.body as Zamowienie;
+
+    let price: number = 0;
+    if (input.dish) {
+      input.dish.forEach((dish) => {
+        price += dish.price;
+      });
+    }
+    if (input.product) {
+      input.product.forEach((product) => {
+        price += product.price;
+      });
+    }
+
+    const zamowienie: Zamowienie = {
+      orderType: input.orderType,
+      employee: input.employee,
+      status: input.status,
+      price: price,
+      orderDate: input.orderDate,
+      address: input.address,
+      dish: input.dish,
+      product: input.product,
+      table: input.table,
+    };
 
     let result = await Validator.ValidatorZamowienie(zamowienie);
 
@@ -86,8 +134,8 @@ router.put("/:id", async (req: Request, res: Response) => {
       );
     }
     result
-      ? res.status(201).send(result)
-      : res.status(404).send("Nie udało się dodać zamowienia");
+      ? res.status(201).send("Udało się zaktualizować zamowienie")
+      : res.status(404).send("Nie udało się zaktualizować zamowienia");
   } catch (error) {
     let errorMessage = "Błąd";
     if (error instanceof Error) {

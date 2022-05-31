@@ -8,5 +8,6 @@ export default class Restauracja {
     public nip: string,
     public email: string,
     public www?: string,
+    public _id?: ObjectId
   ) {}
 }

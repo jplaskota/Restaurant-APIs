@@ -263,12 +263,17 @@ export default class Validator {
     }
   }
 
-  //TODO: test validation on postman
   public static async ValidatorZamowienie(zamowienie: any): Promise<any> {
     const errors: string[] = [];
 
-    /// order date
-    errors.push(Validator.Date(zamowienie.orderDate, "OrderDate"));
+    /// exists
+    const zamowienieExists = await collections?.zamowienie?.findOne(zamowienie);
+
+    if (zamowienieExists !== null) {
+      const info: any = {};
+      info.err = "Order already exists";
+      errors.push(info);
+    }
 
     /// order type
     enum OrderType {
@@ -309,41 +314,42 @@ export default class Validator {
     /// address
     errors.push(Validator.Text(zamowienie.address, "Address"));
 
-    /// dishes
-    if (zamowienie.danie) {
-      const danie = (await collections?.danie?.find(
-        zamowienie.danie
-      )) as unknown as Danie[];
-
-      if (danie === undefined) {
-        const info: any = {};
-        info.err = "Danie not found";
-        errors.push(info);
-      }
+    /// dishes exists
+    if (zamowienie.dish) {
+      const info: any = {};
+      zamowienie.dish.forEach(async (element: Danie) => {
+        const dishExists = await collections?.danie?.findOne({
+          _id: new ObjectId(element._id),
+        });
+        if (dishExists === null || dishExists === undefined) {
+          info.err = "Dish does not exist";
+        }
+      });
+      if (info.err) errors.push(info);
     }
 
     /// products
-    if (zamowienie.produkt) {
-      const produkt = (await collections?.produkt?.find(
-        zamowienie?.produkt
-      )) as unknown as Produkt[];
-
-      if (produkt === undefined) {
-        const info: any = {};
-        info.err = "Produkt not found";
-        errors.push(info);
-      }
+    if (zamowienie.product) {
+      const info: any = {};
+      zamowienie.product.forEach(async (element: Produkt) => {
+        const productExists = await collections?.produkt?.findOne({
+          _id: new ObjectId(element._id),
+        });
+        if (productExists === null || productExists === undefined) {
+          info.err = "Product does not exist";
+        }
+      });
+      if (info.err) errors.push(info);
     }
 
     /// table
     if (zamowienie.table) {
-      const stolik = (await collections?.stolik?.find(
-        zamowienie?.stolik
-      )) as unknown as Stolik;
-
-      if (stolik === undefined) {
+      const tableExists = await collections?.stolik?.findOne({
+        _id: new ObjectId(zamowienie.table._id),
+      });
+      if (tableExists === null || tableExists === undefined) {
         const info: any = {};
-        info.err = "Stolik not found";
+        info.err = "Table does not exist";
         errors.push(info);
       }
     }
@@ -396,7 +402,6 @@ export default class Validator {
         }
       }
     } else if (nameof === "Phone") {
-      //TODO validacja dla stringa i number
       if (!text) {
         errors.err = nameof + " is required";
         return errors;

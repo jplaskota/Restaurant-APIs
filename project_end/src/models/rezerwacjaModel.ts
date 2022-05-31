@@ -7,6 +7,7 @@ export default class Rezerwacja {
     public dateEnd: Date,
     public seats: number,
     public customer: string,
-    public phone: string
+    public phone: string,
+    public _id?: ObjectId
   ) {}
 }
